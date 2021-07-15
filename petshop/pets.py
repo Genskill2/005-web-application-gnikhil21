@@ -18,8 +18,16 @@ def format_date(d):
 
 @bp.route("/search/<field>/<value>")
 def search(field, value):
-    # TBD
-    return ""
+    conn = db.get_db()
+    cursor = conn.cursor()
+    oby = request.args.get("order_by", "id")
+    order = request.args.get("order", "asc")
+    if order == "asc":
+        cursor.execute("select p.id, p.name, p.bought, p.sold, s.name from pet p, animal s, tags_pets tp, tag t where t.name = ? and tp.tag = t.id and p.id=tp.pet and p.species = s.id order by p."+oby, [value])
+    else:
+        cursor.execute("select p.id, p.name, p.bought, p.sold, s.name from pet p, animal s, tags_pets tp, tag t where t.name = ? and tp.tag = t.id and p.id=tp.pet and p.species = s.id order by p."+oby+" desc",[value])
+    pets = cursor.fetchall()
+    return render_template('search.html', field = field, value = value, pets = pets, order="desc" if order=="asc" else "asc")
 
 @bp.route("/")
 def dashboard():
@@ -74,7 +82,10 @@ def edit(pid):
     elif request.method == "POST":
         description = request.form.get('description')
         sold = request.form.get("sold")
-        # TODO Handle sold
+        cursor.execute(f"""update pet 
+                        set description = ? , sold = ?
+                        where id = ? """,[description,sold,pid])
+        conn.commit()
         return redirect(url_for("pets.pet_info", pid=pid), 302)
         
     
