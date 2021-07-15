@@ -20,14 +20,15 @@ def format_date(d):
 def search(field, value):
     conn = db.get_db()
     cursor = conn.cursor()
-    oby = request.args.get("order_by", "id")
+    oby = request.args.get("order_by", "id") 
     order = request.args.get("order", "asc")
     if order == "asc":
-        cursor.execute("select p.id, p.name, p.bought, p.sold, s.name from pet p, animal s, tags_pets tp, tag t where t.name = ? and tp.tag = t.id and p.id=tp.pet and p.species = s.id order by p."+oby, [value])
+        cursor.execute(f"select p.id, p.name, p.bought, p.sold, s.name from pet p, animal s, tag t, tags_pets tp where p.species = s.id and p.id = tp.pet and t.id = tp.tag and t.name='{value}' order by p.{oby}")#, (value))    pets = cursor.fetchall()
     else:
-        cursor.execute("select p.id, p.name, p.bought, p.sold, s.name from pet p, animal s, tags_pets tp, tag t where t.name = ? and tp.tag = t.id and p.id=tp.pet and p.species = s.id order by p."+oby+" desc",[value])
+        cursor.execute(f"select p.id, p.name, p.bought, p.sold, s.name from pet p, animal s, tag t, tags_pets tp where p.species = s.id and p.id = tp.pet and t.id = tp.tag and t.name='{value}' order by p.{oby} desc")#, (value))    pets = cursor.fetchall()
     pets = cursor.fetchall()
-    return render_template('search.html', field = field, value = value, pets = pets, order="desc" if order=="asc" else "asc")
+    return render_template('search.html', pets=pets, field=field, value=value, order="desc" if order=="asc" else "asc")
+
 
 @bp.route("/")
 def dashboard():
@@ -36,9 +37,9 @@ def dashboard():
     oby = request.args.get("order_by", "id") # TODO. This is currently not used. 
     order = request.args.get("order", "asc")
     if order == "asc":
-        cursor.execute(f"select p.id, p.name, p.bought, p.sold, s.name from pet p, animal s where p.species = s.id order by p.id")
+        cursor.execute(f"select p.id, p.name, p.bought, p.sold, s.name from pet p, animal s where p.species = s.id order by p.{oby}")
     else:
-        cursor.execute(f"select p.id, p.name, p.bought, p.sold, s.name from pet p, animal s where p.species = s.id order by p.id desc")
+        cursor.execute(f"select p.id, p.name, p.bought, p.sold, s.name from pet p, animal s where p.species = s.id order by p.{oby} desc")
     pets = cursor.fetchall()
     return render_template('index.html', pets = pets, order="desc" if order=="asc" else "asc")
 
